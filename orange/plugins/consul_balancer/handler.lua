@@ -4,9 +4,6 @@ local utils = require("orange.utils.utils")
 
 local orange = require("orange.orange")
 
-local consul = require("orange.plugins.consul_balancer.consul_balancer")
-
-
 local string_find = string.find
 
 local ConsulBalancerHandler = BasePlugin:extend()
@@ -22,10 +19,10 @@ function ConsulBalancerHandler:db_ready()
     local enable = orange_db.get("consul_balancer.enable")
     local meta = orange_db.get_json("consul_balancer.meta")
     local selectors = orange_db.get_json("consul_balancer.selectors")
-    
+
     if not enable or enable ~= true or not meta or not selectors then
         --ngx.var.target = ngx.var.upstream_url
-        ngx.log(ngx.ERR,"end<<<<<<<<")
+        ngx.log(ngx.ERR, "consule balancer end<<<<<<<<")
         return
     end
 
@@ -40,12 +37,15 @@ function ConsulBalancerHandler:db_ready()
                     end
 
                     if k1 == "service" then
-                        table.insert( services, {
-                            id = id,
-                            name = upstream,
-                            service = upstream,
-                            tag = nil
-                          } )
+                        table.insert(
+                            services,
+                            {
+                                id = id,
+                                name = upstream,
+                                service = upstream,
+                                tag = nil
+                            }
+                        )
                     end
                 end
             end
@@ -53,7 +53,7 @@ function ConsulBalancerHandler:db_ready()
 
         if #services > 0 then
             orange.data.consul.watch(services)
-            ngx.log(ngx.INFO, "<<<<will watch ", #services)
+            ngx.log(ngx.INFO, "<<<<consule balancer will watch services count :", #services)
         end
     end
 end
@@ -64,7 +64,7 @@ function make_cache()
     local selectors = orange_db.get_json("consul_balancer.selectors")
 
     if not enable or enable ~= true or not meta or not selectors then
-        ngx.log(ngx.DEBUG,"nil upstream_url,maybe disable")
+        ngx.log(ngx.DEBUG, "nil upstream_url,maybe disable")
         ngx.var.target = ngx.var.upstream_url
         return
     end
@@ -72,7 +72,7 @@ function make_cache()
     ngx.ctx.consul_balancer_enable = true
     if not ngx.var.upstream_url or ngx.var.upstream_url == "nil" then
         ngx.var.target = ngx.var.upstream_url
-        ngx.log(ngx.DEBUG,"nil upstream_url,maybe rediected")
+        ngx.log(ngx.DEBUG, "nil upstream_url,maybe rediected")
         return
     end
 
@@ -109,10 +109,10 @@ function make_cache()
 
                     -- set balancer_addr
                     balancer_addr = {
-                        type                = "name",
-                        id                  = upstream.id,
-                        name                = name,
-                        service             = upstream.service,
+                        type = "name",
+                        id = upstream.id,
+                        name = name,
+                        service = upstream.service
                     }
 
                     break
@@ -128,7 +128,17 @@ function make_cache()
     -- target is used by proxy_pass
     ngx.var.target = target
 
-    ngx.log(ngx.INFO, "[scheme] ", scheme, "; [hostname] ", hostname, "[target] ", target, "; [upstream_url] ", upstream_url)
+    ngx.log(
+        ngx.INFO,
+        "[scheme] ",
+        scheme,
+        "; [hostname] ",
+        hostname,
+        "[target] ",
+        target,
+        "; [upstream_url] ",
+        upstream_url
+    )
 end
 
 function ConsulBalancerHandler:access(conf)
